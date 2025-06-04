@@ -86,22 +86,211 @@
       <button>Trigger a Global Error</button>
     </section>
   </main>
-
+  <script src="https://cdn.trackjs.com/agent/v3/latest/t.js"></script>
   <script>
+    window.TrackJS && TrackJS.install({ 
+      token: "6441fe86e0de4f458dd85cd3a84d8179"
+    });
+
+    console.log('TrackJS installed:', !!window.TrackJS);
+
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.log('Global error caught:');
+       console.log('Message:', message);
+       console.log('Source:', source);
+
+      console.log('Line:', lineno);
+       console.log('Column:', colno);
+      console.log('Error object:', error);
+
+      if (window.TrackJS) {
+        TrackJS.track(error);
+      }
+      
+      return true;
+    };
+
+    class CalculatorError extends Error {
+      constructor(message) {
+        super(message);
+        this.name = 'CalculatorError';
+      }
+    }
+
+    class DivisionByZeroError extends CalculatorError {
+      constructor() {
+        super('Division by zero is not allowed');
+        this.name = 'DivisionByZeroError';
+      }
+    }
+
+    class InvalidInputError extends CalculatorError {
+      constructor(message) {
+        super(message);
+        this.name = 'InvalidInputError';
+      }
+    }
+
+    class MissingElementError extends CalculatorError {
+      constructor(elementName) {
+        super(`Required element "${elementName}" is missing`);
+        this.name = 'MissingElementError';
+      }
+    }
+
     let form = document.querySelector('form');
     form.addEventListener('submit', e => {
       e.preventDefault();
       let output = document.querySelector('output');
-      let firstNum = document.querySelector('#first-num').value;
-      let secondNum = document.querySelector('#second-num').value;
-      let operator = document.querySelector('#operator').value;
-      output.innerHTML = eval(`${firstNum} ${operator} ${secondNum}`);
+      
+      try {
+        const firstNumInput = document.querySelector('#first-num');
+        const secondNumInput = document.querySelector('#second-num');
+        const operatorSelect = document.querySelector('#operator');
+
+        if (!firstNumInput) {
+          throw new MissingElementError('first-num');
+        }
+        if (!secondNumInput) {
+          throw new MissingElementError('second-num');
+        }
+        if (!operatorSelect) {
+          throw new MissingElementError('operator');
+        }
+
+        const firstNum = parseFloat(firstNumInput.value);
+        const secondNum = parseFloat(secondNumInput.value);
+        const operator = operatorSelect.value;
+
+        if (isNaN(firstNum) || isNaN(secondNum)) {
+          throw new InvalidInputError('Please enter valid numbers');
+        }
+
+        let result;
+        switch (operator) {
+          case '+':
+            result = firstNum + secondNum;
+            break;
+          case '-':
+            result = firstNum - secondNum;
+            break;
+          case '*':
+            result = firstNum * secondNum;
+            break;
+          case '/':
+            if (secondNum === 0) {
+              throw new DivisionByZeroError();
+            }
+            result = firstNum / secondNum;
+            break;
+          default:
+            throw new InvalidInputError('Invalid operator selected');
+        }
+
+        output.innerHTML = result;
+        output.style.color = 'black';
+
+      } catch (error) {
+        output.innerHTML = `Error: ${error.message}`;
+        output.style.color = 'red';
+        
+
+        if (error instanceof DivisionByZeroError) {
+          console.error('Division Error:', error);
+        } else if (error instanceof InvalidInputError) {
+          console.error('Input Error:', error);
+        } else if (error instanceof MissingElementError) {
+          console.error('DOM Error:', error);
+        } else {
+          console.error('Unexpected Error:', error);
+        }
+      } finally {
+        console.log('Calculation attempt completed');
+      }
     });
+    document.addEventListener('DOMContentLoaded', function() {
+      let errorBtns = Array.from(document.querySelectorAll('#error-btns > button'));
+      errorBtns[14].addEventListener('click', () => {
+        console.log('Triggering errors for TrackJS...');
+        const undefinedVariable = nonExistentVariable.someProperty;
+        setTimeout(() => {
+          throw new Error('This is a test error for TrackJS');
+        }, 100);
+      });
 
-    let errorBtns = Array.from(document.querySelectorAll('#error-btns > button'));
+      errorBtns[0].addEventListener('click', () => {
+        console.log('This is a console.log message', { example: 'data' });
+      });
 
-    // Start your code here
-    // You may move this JS to another file if you wish
+      errorBtns[1].addEventListener('click', () => {
+        console.error('This is a console.error message');
+      });
+
+      errorBtns[2].addEventListener('click', () => {
+        console.count('Button clicked');
+      });
+
+      errorBtns[3].addEventListener('click', () => {
+        console.warn('This is a console.warn message');
+      });
+
+      errorBtns[4].addEventListener('click', () => {
+        console.assert(1 === 2, 'This assertion failed');
+      });
+
+      errorBtns[5].addEventListener('click', () => {
+        console.clear();
+      });
+
+      errorBtns[6].addEventListener('click', () => {
+        console.dir(document.querySelector('form'));
+      });
+
+      errorBtns[7].addEventListener('click', () => {
+        console.dirxml(document.querySelector('form'));
+      });
+
+      errorBtns[8].addEventListener('click', () => {
+        console.group('Grouped Information');
+        console.log('First item in group');
+        console.log('Second item in group');
+        console.groupEnd();
+      });
+
+      errorBtns[9].addEventListener('click', () => {
+        console.groupEnd();
+      });
+
+      errorBtns[10].addEventListener('click', () => {
+        const data = [
+          { name: 'John', age: 30, city: 'New York' },
+          { name: 'Jane', age: 25, city: 'Los Angeles' },
+          { name: 'Bob', age: 35, city: 'Chicago' }
+        ];
+        console.table(data);
+      });
+
+      errorBtns[11].addEventListener('click', () => {
+        console.time('Operation Timer');
+      });
+
+      errorBtns[12].addEventListener('click', () => {
+        console.timeEnd('Operation Timer');
+      });
+
+      errorBtns[13].addEventListener('click', () => {
+        function first() {
+          second();
+        }
+        function second() {
+          third();
+        }
+        function third() {
+          console.trace('Trace the call stack');
+        }
+        first();
+      });
+    });
   </script>
 </body>
 
